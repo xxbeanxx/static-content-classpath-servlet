@@ -66,6 +66,10 @@ public class ClasspathStaticContentServlet extends HttpServlet {
 
 	public static final String PARAM_PACKAGES = "packages";
 
+	private static final String DEFAULT_ENCODING = "UTF-8";
+
+	private static final int DEFAULT_EXPIRES = 365 * 24 * 60 * 60;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathStaticContentServlet.class);
 
 	private static final String PACKAGES_DELIMITER = ",; \t\n";
@@ -77,10 +81,10 @@ public class ClasspathStaticContentServlet extends HttpServlet {
 	protected List<String> packages;
 	
 	/** The output character encoding. */
-	protected String encoding = "UTF-8";
+	protected String encoding = DEFAULT_ENCODING;
 
 	/** The time delta (from now) used to expire the content. **/
-	protected int expiresDelta = 365 * 24 * 60 * 60;
+	protected int expiresDelta = DEFAULT_EXPIRES;
 
 	@Override
 	public void init() throws ServletException {
@@ -97,17 +101,45 @@ public class ClasspathStaticContentServlet extends HttpServlet {
 		}
 		
 		if (getInitParameter(PARAM_EXPIRES) != null) {
-			try {
-				this.expiresDelta = Integer.valueOf(getInitParameter(PARAM_EXPIRES));
-			}
-			catch (final NumberFormatException numberFormatException) {
-				LOGGER.warn("Caught exception converting init-parameter '{}' to long. Using default of {}", PARAM_EXPIRES, this.expiresDelta);
-			}
+			this.expiresDelta = parseIntWithDefault(getInitParameter(PARAM_EXPIRES), DEFAULT_EXPIRES);
 		}
 		
 		LOGGER.info("Servlet initialized: " + dumpInitParams());
 	}
 	
+	private List<String> tokenizeToList(String string, String delimiters) {
+		final List<String> list = new ArrayList<String>();
+		
+		if (string != null) {
+			final StringTokenizer stringTokenizer = new StringTokenizer(string, delimiters);
+			
+			while (stringTokenizer.hasMoreTokens()) {
+				final String token = stringTokenizer.nextToken().trim();
+				list.add(token);
+			}
+		}
+		
+		return list;
+	}
+
+	private int parseIntWithDefault(String string, int defaultValue) {
+		try {
+			return Integer.valueOf(string);
+		}
+		catch (final NumberFormatException numberFormatException) {
+			LOGGER.warn("Caught exception converting '{}' to int. Using default of {}", string, defaultValue);
+			return defaultValue;
+		}
+	}
+
+	private String dumpInitParams() {
+		return "ClasspathStaticContentServlet [\n"
+				+ "\t disableBrowserCache=" + disableBrowserCache + "\n"
+				+ "\t encoding=" + encoding + "\n"
+				+ "\t expiresDelta=" + expiresDelta + "\n"
+				+ "\t packages=" + packages + "\n]";
+	}
+
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		final String servletPath = request.getServletPath();
@@ -131,6 +163,15 @@ public class ClasspathStaticContentServlet extends HttpServlet {
 		}
 	}
 	
+	private String buildQualifiedPath(String contentPath, String pkg) throws UnsupportedEncodingException {
+	    if (pkg.endsWith("/") && contentPath.startsWith("/")) {
+	        return URLDecoder.decode(pkg + contentPath.substring(1), encoding);
+	    }
+	    else {
+	        return URLDecoder.decode(pkg + contentPath, encoding);
+	    }
+	}
+
 	protected void processRequest(Resource resource, HttpServletRequest request, HttpServletResponse response) throws IOException {
 		final Calendar cal = Calendar.getInstance();
 		final long now = cal.getTimeInMillis();
@@ -191,38 +232,6 @@ public class ClasspathStaticContentServlet extends HttpServlet {
 		catch (final IllegalArgumentException illegalArgumentException) {
 			return 0L;
 		}
-	}
-
-	protected String buildQualifiedPath(String contentPath, String pkg) throws UnsupportedEncodingException {
-        if (pkg.endsWith("/") && contentPath.startsWith("/")) {
-            return URLDecoder.decode(pkg + contentPath.substring(1), encoding);
-        }
-        else {
-            return URLDecoder.decode(pkg + contentPath, encoding);
-        }
-	}
-
-	protected List<String> tokenizeToList(String string, String delimiters) {
-		final List<String> list = new ArrayList<String>();
-		
-		if (string != null) {
-			final StringTokenizer stringTokenizer = new StringTokenizer(string, delimiters);
-			
-			while (stringTokenizer.hasMoreTokens()) {
-				final String token = stringTokenizer.nextToken().trim();
-				list.add(token);
-			}
-		}
-		
-		return list;
-	}
-
-	private String dumpInitParams() {
-		return "ClasspathStaticContentServlet [\n"
-				+ "\t disableBrowserCache=" + disableBrowserCache + "\n"
-				+ "\t encoding=" + encoding + "\n"
-				+ "\t expiresDelta=" + expiresDelta + "\n"
-				+ "\t packages=" + packages + "\n]";
 	}
 	
 }
