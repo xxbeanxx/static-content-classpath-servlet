@@ -4,6 +4,7 @@
 	<groupId>com.github.xxbeanxx</groupId>
 	<artifactId>static-content-classpath-servlet</artifactId>
 	<version>0.1.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
 	
 	<name>Static Content Classpath Servlet</name>
 	<description>Servlet used to serve static content from the classpath.</description>
