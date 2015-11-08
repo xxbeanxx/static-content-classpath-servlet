@@ -120,7 +120,12 @@ public class ClasspathStaticContentServlet extends HttpServlet {
 			
 			if (resource.exists()) {
 				processRequest(resource, request, response);
-				LOGGER.debug("Successfully processed request for resource {}", path);
+				LOGGER.debug("Successfully processed request for resource {}", qualifiedPath);
+				return;
+			}
+			else {
+				LOGGER.debug("Resource {} was not found in classpath, returning {}", qualifiedPath, HttpServletResponse.SC_NOT_FOUND);
+				response.sendError(HttpServletResponse.SC_NOT_FOUND);
 				return;
 			}
 		}
