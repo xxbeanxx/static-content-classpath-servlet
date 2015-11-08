@@ -22,7 +22,7 @@ public class Resource {
 	/** ClassLoader used to load the resource */
 	private final ClassLoader classLoader;
 
-	/** The last modified date. Defaults to the application's deployment time. */
+	/** The last modified date */
 	private static final long LAST_MODIFIED_MILLIS = Calendar.getInstance().getTimeInMillis();
 
 	public Resource(String path) {
