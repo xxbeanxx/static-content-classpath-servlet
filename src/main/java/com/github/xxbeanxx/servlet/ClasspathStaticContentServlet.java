@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -19,7 +18,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.xxbeanxx.servlet.util.MimeUtils;
+import com.github.xxbeanxx.servlet.io.Resource;
+import com.github.xxbeanxx.servlet.io.ResourceUtils;
 
 /**
  * A servlet for classpath-based static content.
@@ -66,15 +66,10 @@ public class ClasspathStaticContentServlet extends HttpServlet {
 
 	public static final String PARAM_PACKAGES = "packages";
 
-	/** The last modified date. Defaults to the application's deployment time. */
-	private static final long LAST_MODIFIED_MILLIS = Calendar.getInstance().getTimeInMillis();
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathStaticContentServlet.class);
 
 	private static final String PACKAGES_DELIMITER = ",; \t\n";
 	
-	private static final int OUTPUT_BUFFER_SIZE = 4096;
-
 	/** If true, sends no-cache headers in the response */
 	protected boolean disableBrowserCache;
 	
@@ -121,33 +116,17 @@ public class ClasspathStaticContentServlet extends HttpServlet {
 		
 		for (final String pkg : packages) {
 			final String qualifiedPath = buildQualifiedPath(path, pkg);
-			final URL resourceUrl = findResourceUrl(qualifiedPath);
+			final Resource resource = new Resource(qualifiedPath);
 			
-			if (resourceUrl != null) {
-				LOGGER.debug("Resource found at location {}", resourceUrl);
-				
-				InputStream inputStream = null;
-				
-				try {
-					if (resourceUrl.getFile().endsWith(qualifiedPath)) {
-						inputStream = resourceUrl.openStream();
-					}
-				}
-				catch (final IOException ioException) {
-					LOGGER.debug("Caught exception opening input stream", ioException);
-				}
-
-				// the request is intentionally processed outside of the try/catch above 
-				if (inputStream != null) {
-					processRequest(inputStream, path, request, response);
-					LOGGER.debug("Successfully processed request for resource {}", path);
-					return;
-				}
+			if (resource.exists()) {
+				processRequest(resource, request, response);
+				LOGGER.debug("Successfully processed request for resource {}", path);
+				return;
 			}
 		}
 	}
 	
-	protected void processRequest(InputStream inputStream, String path, HttpServletRequest request, HttpServletResponse response) throws IOException {
+	protected void processRequest(Resource resource, HttpServletRequest request, HttpServletResponse response) throws IOException {
 		final Calendar cal = Calendar.getInstance();
 		final long now = cal.getTimeInMillis();
 		cal.add(Calendar.SECOND, expiresDelta);
@@ -157,15 +136,17 @@ public class ClasspathStaticContentServlet extends HttpServlet {
 		final long ifModifiedSince = getIfModifiedSinceHeader(request);
 		LOGGER.debug("'If-Modified-Since' request header is {}", ifModifiedSince);
 
-		if (ifModifiedSince > 0 && ifModifiedSince <= LAST_MODIFIED_MILLIS) {
+		final long resourceLastModified = resource.getLastModified();
+		LOGGER.debug("Resource lastModified time is {}", resourceLastModified);
+		
+		if (ifModifiedSince > 0 && ifModifiedSince <= resourceLastModified) {
 			LOGGER.debug("Resource was not modified, sending {}", HttpServletResponse.SC_NOT_MODIFIED);
 			response.setDateHeader("Expires", expires);
 			response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
-			inputStream.close();
 			return;
 		}
 
-		final String contentType = MimeUtils.guessMimeTypeFromFilename(path);
+		final String contentType = ResourceUtils.guessMimeTypeFromFilename(resource.getPath());
 		LOGGER.debug("Guessed content-type from filename: {}", contentType);
 		
 		if (contentType != null) {
@@ -183,11 +164,14 @@ public class ClasspathStaticContentServlet extends HttpServlet {
 			response.setDateHeader("Expires", expires);
 			response.setDateHeader("Retry-After", expires);
 			response.setHeader("Cache-Control", "public");
-			response.setDateHeader("Last-Modified", LAST_MODIFIED_MILLIS);
+			response.setDateHeader("Last-Modified", resourceLastModified);
 		}
 
+		final InputStream inputStream = resource.getInputStream();
+		final OutputStream outputStream = response.getOutputStream();
+		
 		try {
-			copyStreams(inputStream, response.getOutputStream());
+			ResourceUtils.copyStreams(inputStream, outputStream, true);
 		}
 		finally {
 			inputStream.close();
@@ -201,24 +185,6 @@ public class ClasspathStaticContentServlet extends HttpServlet {
 		catch (final IllegalArgumentException illegalArgumentException) {
 			return 0L;
 		}
-	}
-
-    protected void copyStreams(InputStream input, OutputStream output) throws IOException {
-        final byte[] buffer = new byte[OUTPUT_BUFFER_SIZE];
-
-        int n, total = 0;
-        while (-1 != (n = input.read(buffer))) {
-            output.write(buffer, 0, n);
-            total += n;
-        }
-        
-        LOGGER.debug("Wrote {} bytes to output stream", total);
-        output.flush();
-    }
-    
-	protected URL findResourceUrl(String path) {
-        final URL url = Thread.currentThread().getContextClassLoader().getResource(path);
-        return (url != null) ? url  : getClass().getClassLoader().getResource(path);
 	}
 
 	protected String buildQualifiedPath(String contentPath, String pkg) throws UnsupportedEncodingException {
@@ -250,7 +216,6 @@ public class ClasspathStaticContentServlet extends HttpServlet {
 				+ "\t disableBrowserCache=" + disableBrowserCache + "\n"
 				+ "\t encoding=" + encoding + "\n"
 				+ "\t expiresDelta=" + expiresDelta + "\n"
-				+ "\t lastModifiedMillis=" + LAST_MODIFIED_MILLIS + "\n"
 				+ "\t packages=" + packages + "\n]";
 	}
 	
