@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.xxbeanxx</groupId>
 	<artifactId>static-content-classpath-servlet</artifactId>
-	<version>0.1.1-SNAPSHOT</version>
+	<version>0.1.0</version>
 	<name>Static Content Classpath Servlet</name>
 	<description>Servlet used to serve static content from the classpath.</description>
 	<url>https://github.com/xxbeanxx/static-content-classpath-servlet</url>
@@ -17,7 +17,7 @@
 		<url>https://github.com/xxbeanxx/static-content-classpath-servlet</url>
 		<connection>scm:git:git://github.com/xxbeanxx/static-content-classpath-servlet.git</connection>
 		<developerConnection>scm:git:git@github.com:xxbeanxx/static-content-classpath-servlet.git</developerConnection>
-	  <tag>HEAD</tag>
+	  <tag>static-content-classpath-servlet-0.1.0</tag>
   </scm>
 
 	<developers>
