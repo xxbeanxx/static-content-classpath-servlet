@@ -41,4 +41,24 @@
 		</plugins>
 	</build>
 	
+	<issueManagement>
+		<url>https://github.com/xxbeanxx/static-content-classpath-servlet/issues</url>
+		<system>GitHub Issue Tracker</system>
+	</issueManagement>
+	
+	<scm>
+		<url>https://github.com/xxbeanxx/static-content-classpath-servlet</url>
+		<connection>scm:git:git://github.com/xxbeanxx/static-content-classpath-servlet.git</connection>
+		<developerConnection>scm:git:git@github.com/xxbeanxx/static-content-classpath-servlet.git</developerConnection>
+	</scm>
+	
+	<developers>
+		<developer>
+			<id>xxbeanxx</id>
+			<name>Greg Baker</name>
+			<email>greg.baker.bsc@gmail.com</email>
+			<url>https://github.com/xxbeanxx</url>
+		</developer>
+	</developers>	
+	
 </project>
