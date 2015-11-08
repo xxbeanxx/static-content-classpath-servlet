@@ -14,16 +14,16 @@ import org.slf4j.LoggerFactory;
  */
 public class Resource {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(Resource.class);
+	/** The last modified date */
+	private static final long LAST_MODIFIED_MILLIS = Calendar.getInstance().getTimeInMillis();
 
-	/** Path to the resource to load */
-	private final String path;
+	private static final Logger LOGGER = LoggerFactory.getLogger(Resource.class);
 
 	/** ClassLoader used to load the resource */
 	private final ClassLoader classLoader;
 
-	/** The last modified date */
-	private static final long LAST_MODIFIED_MILLIS = Calendar.getInstance().getTimeInMillis();
+	/** Path to the resource to load */
+	private final String path;
 
 	public Resource(String path) {
 		this(path, (ClassLoader) null);
@@ -40,6 +40,32 @@ public class Resource {
 		
 		this.path = path;
 		this.classLoader = (classLoader != null ? classLoader : getDefaultClassLoader());
+	}
+
+	private ClassLoader getDefaultClassLoader() {
+		ClassLoader classLoader = null;
+		
+		try {
+			classLoader = Thread.currentThread().getContextClassLoader();
+		}
+		catch (final Throwable throwable) {
+			LOGGER.debug("Caught exception acquiring thread context classloader", throwable);
+		}
+		
+		if (classLoader == null) {
+			classLoader = Resource.class.getClassLoader();
+		}
+			
+		if (classLoader == null) {
+			LOGGER.debug("Bootstrap context classloader detected, attempting to acquire system context classloader");
+			classLoader = ClassLoader.getSystemClassLoader();
+		}
+		
+		if (classLoader == null) {
+			throw new NullPointerException("Could not acquire application classloader");
+		}
+		
+		return classLoader;
 	}
 
 	public boolean exists() {
@@ -66,32 +92,6 @@ public class Resource {
 	
 	public URL getUrl() {
 		return this.classLoader.getResource(this.path);
-	}
-	
-	private static ClassLoader getDefaultClassLoader() {
-		ClassLoader classLoader = null;
-		
-		try {
-			classLoader = Thread.currentThread().getContextClassLoader();
-		}
-		catch (final Throwable throwable) {
-			LOGGER.debug("Caught exception acquiring thread context classloader", throwable);
-		}
-		
-		if (classLoader == null) {
-			classLoader = Resource.class.getClassLoader();
-		}
-			
-		if (classLoader == null) {
-			LOGGER.debug("Bootstrap context classloader detected, attempting to acquire system context classloader");
-			classLoader = ClassLoader.getSystemClassLoader();
-		}
-		
-		if (classLoader == null) {
-			throw new NullPointerException("Could not acquire application classloader");
-		}
-		
-		return classLoader;
 	}
 
 }
