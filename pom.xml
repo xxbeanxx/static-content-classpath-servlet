@@ -4,10 +4,18 @@
 	<groupId>com.github.xxbeanxx</groupId>
 	<artifactId>static-content-classpath-servlet</artifactId>
 	<version>0.1.0-SNAPSHOT</version>
+	
 	<name>Static Content Classpath Servlet</name>
 	<description>Servlet used to serve static content from the classpath.</description>
 	<url>https://github.com/xxbeanxx/static-content-classpath-servlet</url>
 
+	<licenses>
+		<license>
+			<name>MIT License</name>
+			<url>http://opensource.org/licenses/MIT</url>
+		</license>
+	</licenses>
+	
 	<issueManagement>
 		<url>https://github.com/xxbeanxx/static-content-classpath-servlet/issues</url>
 		<system>GitHub Issue Tracker</system>
@@ -17,8 +25,7 @@
 		<url>https://github.com/xxbeanxx/static-content-classpath-servlet</url>
 		<connection>scm:git:git://github.com/xxbeanxx/static-content-classpath-servlet.git</connection>
 		<developerConnection>scm:git:git@github.com:xxbeanxx/static-content-classpath-servlet.git</developerConnection>
-	  <tag>HEAD</tag>
-  </scm>
+	</scm>
 
 	<developers>
 		<developer>
