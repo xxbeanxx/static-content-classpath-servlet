@@ -176,10 +176,11 @@ public class ClasspathStaticContentServlet extends HttpServlet {
 		final OutputStream outputStream = response.getOutputStream();
 		
 		try {
-			ResourceUtils.copyStreams(inputStream, outputStream, true);
+			final int total = ResourceUtils.copyStreams(inputStream, outputStream, true);
+	        LOGGER.debug("Wrote {} bytes to output stream", total);
 		}
 		finally {
-			inputStream.close();
+			ResourceUtils.closeQuietly(inputStream);
 		}
 	}
 

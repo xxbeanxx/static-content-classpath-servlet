@@ -1,23 +1,21 @@
 package com.github.xxbeanxx.servlet.io;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * @author Greg Baker
  */
 public class ResourceUtils {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ResourceUtils.class);
-	
 	private static final int DEFAULT_BUFFER_SIZE = 4096;
 	
+	private static final int EOF = -1;
+
 	private static final Map<String, String> MIME_TYPE_TO_EXTENSION_MAP = new HashMap<String, String>();
 
 	private static final Map<String, String> EXTENSION_TO_MIME_TYPE_MAP = new HashMap<String, String>();
@@ -349,24 +347,33 @@ public class ResourceUtils {
 		/* intentionally left blank */
 	}
 	
-	public static void copyStreams(InputStream input, OutputStream output, boolean flush) throws IOException {
-    	copyStreams(input, output, flush, ResourceUtils.DEFAULT_BUFFER_SIZE);
+	public static void closeQuietly(Closeable closeable) {
+		try {
+			closeable.close();
+		}
+		catch (final IOException ioException) {
+			/* shh! quietly! */
+		}
+	}
+	
+	public static int copyStreams(InputStream inputStream, OutputStream outputStream, boolean flush) throws IOException {
+    	return copyStreams(inputStream, outputStream, flush, ResourceUtils.DEFAULT_BUFFER_SIZE);
     }
 	
-    public static void copyStreams(InputStream input, OutputStream output, boolean flush, int bufferSize) throws IOException {
+    public static int copyStreams(InputStream inputStream, OutputStream outputStream, boolean flush, int bufferSize) throws IOException {
         final byte[] buffer = new byte[bufferSize];
 
         int n, total = 0;
-        while (-1 != (n = input.read(buffer))) {
-            output.write(buffer, 0, n);
+        while (EOF != (n = inputStream.read(buffer))) {
+            outputStream.write(buffer, 0, n);
             total += n;
         }
         
-        LOGGER.debug("Wrote {} bytes to output stream", total);
-        
         if (flush) {
-        	output.flush();
+        	outputStream.flush();
         }
+        
+        return total;
     }
 
 	public static String guessMimeTypeFromExtension(String extension) {
