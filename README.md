@@ -1,2 +1,2 @@
-# static-content-classpath-servlet
-Servlet used to serve static content from the classpath.
+# Static Content Classpath Servlet
+A lightweight servlet that can be used to serve static content from the classpath.
